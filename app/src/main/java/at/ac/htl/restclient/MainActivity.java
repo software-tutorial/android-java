@@ -2,18 +2,18 @@ package at.ac.htl.restclient;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.val;
 
 import java.net.URL;
 import java.util.Arrays;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class MainActivity extends Activity {
@@ -28,10 +28,11 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        val mainThread = new Handler(Looper.getMainLooper());
-        CompletableFuture
-            .supplyAsync(this::loadAllTodos)
-            .thenAccept(todos -> mainThread.post(() -> fillListViewWithTitlesOf(todos)));
+        Observable
+                .fromCallable(this::loadAllTodos)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::fillListViewWithTitlesOf);
     }
     @SneakyThrows
     ToDo[] loadAllTodos() {
